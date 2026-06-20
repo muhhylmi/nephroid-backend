@@ -38,7 +38,7 @@ func (s *userService) RegisterUser(ctx context.Context, email string) (*domain.U
 		return nil, domain.ErrConflict
 	}
 
-	user, err := s.repo.Create(ctx, email)
+	user, err := s.repo.Create(ctx, email, "", "patient", "")
 	if err != nil {
 		return nil, fmt.Errorf("user service error creating user: %w", err)
 	}
