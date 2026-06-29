@@ -10,8 +10,9 @@ import (
 )
 
 type LabRepository interface {
-	Create(ctx context.Context, userID uuid.UUID, date string, kreatinin, ureum, kalium, hb float64) (*domain.LabRecord, error)
+	Create(ctx context.Context, userID uuid.UUID, date string, kreatinin, ureum, kalium, hb float64, customValues []byte) (*domain.LabRecord, error)
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]domain.LabRecord, error)
+	Update(ctx context.Context, id uuid.UUID, date string, kreatinin, ureum, kalium, hb float64, customValues []byte) (*domain.LabRecord, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -23,11 +24,11 @@ func NewLabRepository(db *pgxpool.Pool) LabRepository {
 	return &labRepository{db: db}
 }
 
-func (r *labRepository) Create(ctx context.Context, userID uuid.UUID, date string, kreatinin, ureum, kalium, hb float64) (*domain.LabRecord, error) {
-	query := `INSERT INTO lab_records (user_id, date, kreatinin, ureum, kalium, hb) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, user_id, date, kreatinin, ureum, kalium, hb, created_at`
+func (r *labRepository) Create(ctx context.Context, userID uuid.UUID, date string, kreatinin, ureum, kalium, hb float64, customValues []byte) (*domain.LabRecord, error) {
+	query := `INSERT INTO lab_records (user_id, date, kreatinin, ureum, kalium, hb, custom_values) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, user_id, date, kreatinin, ureum, kalium, hb, custom_values, created_at`
 	
 	var rec domain.LabRecord
-	err := r.db.QueryRow(ctx, query, userID, date, kreatinin, ureum, kalium, hb).Scan(&rec.ID, &rec.UserID, &rec.Date, &rec.Kreatinin, &rec.Ureum, &rec.Kalium, &rec.Hb, &rec.CreatedAt)
+	err := r.db.QueryRow(ctx, query, userID, date, kreatinin, ureum, kalium, hb, customValues).Scan(&rec.ID, &rec.UserID, &rec.Date, &rec.Kreatinin, &rec.Ureum, &rec.Kalium, &rec.Hb, &rec.CustomValues, &rec.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create lab record: %w", err)
 	}
@@ -36,7 +37,7 @@ func (r *labRepository) Create(ctx context.Context, userID uuid.UUID, date strin
 }
 
 func (r *labRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]domain.LabRecord, error) {
-	query := `SELECT id, user_id, date, kreatinin, ureum, kalium, hb, created_at FROM lab_records WHERE user_id = $1 ORDER BY created_at ASC`
+	query := `SELECT id, user_id, date, kreatinin, ureum, kalium, hb, custom_values, created_at FROM lab_records WHERE user_id = $1 ORDER BY created_at ASC`
 	
 	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
@@ -47,7 +48,7 @@ func (r *labRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]dom
 	var records []domain.LabRecord
 	for rows.Next() {
 		var rec domain.LabRecord
-		if err := rows.Scan(&rec.ID, &rec.UserID, &rec.Date, &rec.Kreatinin, &rec.Ureum, &rec.Kalium, &rec.Hb, &rec.CreatedAt); err != nil {
+		if err := rows.Scan(&rec.ID, &rec.UserID, &rec.Date, &rec.Kreatinin, &rec.Ureum, &rec.Kalium, &rec.Hb, &rec.CustomValues, &rec.CreatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan lab record: %w", err)
 		}
 		records = append(records, rec)
@@ -58,6 +59,18 @@ func (r *labRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]dom
 	}
 
 	return records, nil
+}
+
+func (r *labRepository) Update(ctx context.Context, id uuid.UUID, date string, kreatinin, ureum, kalium, hb float64, customValues []byte) (*domain.LabRecord, error) {
+	query := `UPDATE lab_records SET date = $1, kreatinin = $2, ureum = $3, kalium = $4, hb = $5, custom_values = $6 WHERE id = $7 RETURNING id, user_id, date, kreatinin, ureum, kalium, hb, custom_values, created_at`
+	
+	var rec domain.LabRecord
+	err := r.db.QueryRow(ctx, query, date, kreatinin, ureum, kalium, hb, customValues, id).Scan(&rec.ID, &rec.UserID, &rec.Date, &rec.Kreatinin, &rec.Ureum, &rec.Kalium, &rec.Hb, &rec.CustomValues, &rec.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update lab record: %w", err)
+	}
+
+	return &rec, nil
 }
 
 func (r *labRepository) Delete(ctx context.Context, id uuid.UUID) error {

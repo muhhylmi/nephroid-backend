@@ -12,6 +12,7 @@ import (
 type WeightRepository interface {
 	Create(ctx context.Context, userID uuid.UUID, date string, preWeight, postWeight float64) (*domain.WeightRecord, error)
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]domain.WeightRecord, error)
+	Update(ctx context.Context, id uuid.UUID, date string, preWeight, postWeight float64) (*domain.WeightRecord, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -58,6 +59,18 @@ func (r *weightRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]
 	}
 
 	return records, nil
+}
+
+func (r *weightRepository) Update(ctx context.Context, id uuid.UUID, date string, preWeight, postWeight float64) (*domain.WeightRecord, error) {
+	query := `UPDATE weight_records SET date = $1, pre_weight = $2, post_weight = $3 WHERE id = $4 RETURNING id, user_id, date, pre_weight, post_weight, created_at`
+	
+	var rec domain.WeightRecord
+	err := r.db.QueryRow(ctx, query, date, preWeight, postWeight, id).Scan(&rec.ID, &rec.UserID, &rec.Date, &rec.PreWeight, &rec.PostWeight, &rec.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update weight record: %w", err)
+	}
+
+	return &rec, nil
 }
 
 func (r *weightRepository) Delete(ctx context.Context, id uuid.UUID) error {

@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -8,20 +9,22 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID                uuid.UUID `json:"id"`
-	Email             string    `json:"email"`
-	PasswordHash      string    `json:"-"` // never leak password hash to json
-	Role              string    `json:"role"`
-	DialysisFrequency string    `json:"dialysis_frequency,omitempty"`
-	TargetDryWeight   float64   `json:"target_dry_weight"`
-	CreatedAt         time.Time `json:"created_at"`
+	ID                uuid.UUID       `json:"id"`
+	Email             string          `json:"email"`
+	PasswordHash      string          `json:"-"` // never leak password hash to json
+	Role              string          `json:"role"`
+	DialysisFrequency string          `json:"dialysis_frequency,omitempty"`
+	TargetDryWeight   float64         `json:"target_dry_weight"`
+	LabParameters     json.RawMessage `json:"lab_parameters,omitempty"`
+	CreatedAt         time.Time       `json:"created_at"`
 }
 
 type UpdateProfileRequest struct {
-	Email             string  `json:"email"`
-	Role              string  `json:"role"`
-	DialysisFrequency string  `json:"dialysis_frequency"`
-	TargetDryWeight   float64 `json:"target_dry_weight"`
+	Email             string          `json:"email"`
+	Role              string          `json:"role"`
+	DialysisFrequency string          `json:"dialysis_frequency"`
+	TargetDryWeight   float64         `json:"target_dry_weight"`
+	LabParameters     json.RawMessage `json:"lab_parameters,omitempty"`
 }
 
 type WeightRecord struct {
@@ -34,14 +37,15 @@ type WeightRecord struct {
 }
 
 type LabRecord struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    uuid.UUID `json:"user_id"`
-	Date      string    `json:"date"`
-	Kreatinin float64   `json:"kreatinin"`
-	Ureum     float64   `json:"ureum"`
-	Kalium    float64   `json:"kalium"`
-	Hb        float64   `json:"hb"`
-	CreatedAt time.Time `json:"created_at"`
+	ID           uuid.UUID       `json:"id"`
+	UserID       uuid.UUID       `json:"user_id"`
+	Date         string          `json:"date"`
+	Kreatinin    float64         `json:"kreatinin"`
+	Ureum        float64         `json:"ureum"`
+	Kalium       float64         `json:"kalium"`
+	Hb           float64         `json:"hb"`
+	CustomValues json.RawMessage `json:"custom_values,omitempty"`
+	CreatedAt    time.Time       `json:"created_at"`
 }
 
 // ChatSession represents a chat session between a user and the AI

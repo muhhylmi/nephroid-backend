@@ -18,11 +18,12 @@ func NewLabHandler(labRepo repository.LabRepository) *LabHandler {
 }
 
 type AddLabRequest struct {
-	Date      string  `json:"date"`
-	Kreatinin float64 `json:"kreatinin"`
-	Ureum     float64 `json:"ureum"`
-	Kalium    float64 `json:"kalium"`
-	Hb        float64 `json:"hb"`
+	Date         string          `json:"date"`
+	Kreatinin    float64         `json:"kreatinin"`
+	Ureum        float64         `json:"ureum"`
+	Kalium       float64         `json:"kalium"`
+	Hb           float64         `json:"hb"`
+	CustomValues json.RawMessage `json:"custom_values,omitempty"`
 }
 
 func (h *LabHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +40,12 @@ func (h *LabHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rec, err := h.labRepo.Create(r.Context(), userID, req.Date, req.Kreatinin, req.Ureum, req.Kalium, req.Hb)
+	var customValsBytes []byte
+	if req.CustomValues != nil {
+		customValsBytes = []byte(req.CustomValues)
+	}
+
+	rec, err := h.labRepo.Create(r.Context(), userID, req.Date, req.Kreatinin, req.Ureum, req.Kalium, req.Hb, customValsBytes)
 	if err != nil {
 		http.Error(w, "Failed to create lab record", http.StatusInternalServerError)
 		return
@@ -86,4 +92,33 @@ func (h *LabHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *LabHandler) Update(w http.ResponseWriter, r *http.Request) {
+	recordIDStr := r.PathValue("id")
+	recordID, err := uuid.Parse(recordIDStr)
+	if err != nil {
+		http.Error(w, "Invalid record ID", http.StatusBadRequest)
+		return
+	}
+
+	var req AddLabRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	var customValsBytes []byte
+	if req.CustomValues != nil {
+		customValsBytes = []byte(req.CustomValues)
+	}
+
+	rec, err := h.labRepo.Update(r.Context(), recordID, req.Date, req.Kreatinin, req.Ureum, req.Kalium, req.Hb, customValsBytes)
+	if err != nil {
+		http.Error(w, "Failed to update lab record", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(rec)
 }

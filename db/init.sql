@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(50) NOT NULL DEFAULT 'patient',
     dialysis_frequency VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    target_dry_weight NUMERIC DEFAULT 60.0
+    target_dry_weight NUMERIC DEFAULT 60.0,
+    lab_parameters JSONB
 );
 
 CREATE TABLE IF NOT EXISTS weight_records (
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS lab_records (
     ureum NUMERIC NOT NULL,
     kalium NUMERIC NOT NULL,
     hb NUMERIC NOT NULL,
+    custom_values JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS chat_sessions (

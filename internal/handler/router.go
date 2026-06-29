@@ -98,11 +98,13 @@ func SetupRouter(opts RouterOptions) *http.ServeMux {
 	// Weights
 	mux.HandleFunc("POST /api/users/{id}/weights", jwtAuthMiddleware(opts.WeightHandler.Create))
 	mux.HandleFunc("GET /api/users/{id}/weights", jwtAuthMiddleware(opts.WeightHandler.List))
+	mux.HandleFunc("PUT /api/weights/{id}", jwtAuthMiddleware(opts.WeightHandler.Update))
 	mux.HandleFunc("DELETE /api/weights/{id}", jwtAuthMiddleware(opts.WeightHandler.Delete))
 
 	// Labs
 	mux.HandleFunc("POST /api/users/{id}/labs", jwtAuthMiddleware(opts.LabHandler.Create))
 	mux.HandleFunc("GET /api/users/{id}/labs", jwtAuthMiddleware(opts.LabHandler.List))
+	mux.HandleFunc("PUT /api/labs/{id}", jwtAuthMiddleware(opts.LabHandler.Update))
 	mux.HandleFunc("DELETE /api/labs/{id}", jwtAuthMiddleware(opts.LabHandler.Delete))
 
 	// Chat Sessions
