@@ -13,6 +13,7 @@ import (
 type UserService interface {
 	RegisterUser(ctx context.Context, email string) (*domain.User, error)
 	GetUser(ctx context.Context, id uuid.UUID) (*domain.User, error)
+	UpdateProfile(ctx context.Context, id uuid.UUID, req domain.UpdateProfileRequest) (*domain.User, error)
 }
 
 type userService struct {
@@ -50,6 +51,18 @@ func (s *userService) GetUser(ctx context.Context, id uuid.UUID) (*domain.User, 
 	user, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("user service error getting user: %w", err)
+	}
+	return user, nil
+}
+
+func (s *userService) UpdateProfile(ctx context.Context, id uuid.UUID, req domain.UpdateProfileRequest) (*domain.User, error) {
+	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+	if req.Email == "" {
+		return nil, domain.ErrInvalidInput
+	}
+	user, err := s.repo.UpdateProfile(ctx, id, req)
+	if err != nil {
+		return nil, fmt.Errorf("user service error updating user: %w", err)
 	}
 	return user, nil
 }

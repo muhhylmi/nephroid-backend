@@ -13,7 +13,35 @@ type User struct {
 	PasswordHash      string    `json:"-"` // never leak password hash to json
 	Role              string    `json:"role"`
 	DialysisFrequency string    `json:"dialysis_frequency,omitempty"`
+	TargetDryWeight   float64   `json:"target_dry_weight"`
 	CreatedAt         time.Time `json:"created_at"`
+}
+
+type UpdateProfileRequest struct {
+	Email             string  `json:"email"`
+	Role              string  `json:"role"`
+	DialysisFrequency string  `json:"dialysis_frequency"`
+	TargetDryWeight   float64 `json:"target_dry_weight"`
+}
+
+type WeightRecord struct {
+	ID         uuid.UUID `json:"id"`
+	UserID     uuid.UUID `json:"user_id"`
+	Date       string    `json:"date"`
+	PreWeight  float64   `json:"preWeight"`
+	PostWeight float64   `json:"postWeight"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+type LabRecord struct {
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	Date      string    `json:"date"`
+	Kreatinin float64   `json:"kreatinin"`
+	Ureum     float64   `json:"ureum"`
+	Kalium    float64   `json:"kalium"`
+	Hb        float64   `json:"hb"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // ChatSession represents a chat session between a user and the AI

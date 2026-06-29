@@ -20,11 +20,11 @@ func NewUserRepository(db *pgxpool.Pool) UserRepository {
 }
 
 func (r *userRepository) Create(ctx context.Context, email, passwordHash, role, dialysisFrequency string) (*domain.User, error) {
-	query := `INSERT INTO users (email, password_hash, role, dialysis_frequency) VALUES ($1, $2, $3, $4) RETURNING id, email, password_hash, role, dialysis_frequency, created_at`
+	query := `INSERT INTO users (email, password_hash, role, dialysis_frequency) VALUES ($1, $2, $3, $4) RETURNING id, email, password_hash, role, dialysis_frequency, target_dry_weight, created_at`
 	
 	var user domain.User
 	var freq *string
-	err := r.db.QueryRow(ctx, query, email, passwordHash, role, dialysisFrequency).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &freq, &user.CreatedAt)
+	err := r.db.QueryRow(ctx, query, email, passwordHash, role, dialysisFrequency).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &freq, &user.TargetDryWeight, &user.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
@@ -36,11 +36,11 @@ func (r *userRepository) Create(ctx context.Context, email, passwordHash, role, 
 }
 
 func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
-	query := `SELECT id, email, password_hash, role, dialysis_frequency, created_at FROM users WHERE id = $1`
+	query := `SELECT id, email, password_hash, role, dialysis_frequency, target_dry_weight, created_at FROM users WHERE id = $1`
 	
 	var user domain.User
 	var freq *string
-	err := r.db.QueryRow(ctx, query, id).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &freq, &user.CreatedAt)
+	err := r.db.QueryRow(ctx, query, id).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &freq, &user.TargetDryWeight, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFound
@@ -55,16 +55,35 @@ func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Use
 }
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
-	query := `SELECT id, email, password_hash, role, dialysis_frequency, created_at FROM users WHERE email = $1`
+	query := `SELECT id, email, password_hash, role, dialysis_frequency, target_dry_weight, created_at FROM users WHERE email = $1`
 	
 	var user domain.User
 	var freq *string
-	err := r.db.QueryRow(ctx, query, email).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &freq, &user.CreatedAt)
+	err := r.db.QueryRow(ctx, query, email).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &freq, &user.TargetDryWeight, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
+	}
+	if freq != nil {
+		user.DialysisFrequency = *freq
+	}
+
+	return &user, nil
+}
+
+func (r *userRepository) UpdateProfile(ctx context.Context, id uuid.UUID, req domain.UpdateProfileRequest) (*domain.User, error) {
+	query := `UPDATE users SET email = $1, role = $2, dialysis_frequency = $3, target_dry_weight = $4 WHERE id = $5 RETURNING id, email, password_hash, role, dialysis_frequency, target_dry_weight, created_at`
+	
+	var user domain.User
+	var freq *string
+	err := r.db.QueryRow(ctx, query, req.Email, req.Role, req.DialysisFrequency, req.TargetDryWeight, id).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &freq, &user.TargetDryWeight, &user.CreatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 	if freq != nil {
 		user.DialysisFrequency = *freq

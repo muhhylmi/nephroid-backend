@@ -12,9 +12,11 @@ import (
 )
 
 type RouterOptions struct {
-	UserHandler *UserHandler
-	ChatHandler *ChatHandler
-	AuthHandler *AuthHandler
+	UserHandler   *UserHandler
+	ChatHandler   *ChatHandler
+	AuthHandler   *AuthHandler
+	WeightHandler *WeightHandler
+	LabHandler    *LabHandler
 }
 
 type contextKey string
@@ -88,9 +90,20 @@ func SetupRouter(opts RouterOptions) *http.ServeMux {
 	mux.HandleFunc("POST /api/auth/register", opts.AuthHandler.Register)
 	mux.HandleFunc("POST /api/auth/login", opts.AuthHandler.Login)
 
-	// Users - old register left intact for now, but we'll protect Get
+	// Users - old register left intact for now, but we'll protect Get and Update
 	mux.HandleFunc("POST /api/users", opts.UserHandler.Register)
 	mux.HandleFunc("GET /api/users/{id}", jwtAuthMiddleware(opts.UserHandler.Get))
+	mux.HandleFunc("PUT /api/users/{id}", jwtAuthMiddleware(opts.UserHandler.Update))
+
+	// Weights
+	mux.HandleFunc("POST /api/users/{id}/weights", jwtAuthMiddleware(opts.WeightHandler.Create))
+	mux.HandleFunc("GET /api/users/{id}/weights", jwtAuthMiddleware(opts.WeightHandler.List))
+	mux.HandleFunc("DELETE /api/weights/{id}", jwtAuthMiddleware(opts.WeightHandler.Delete))
+
+	// Labs
+	mux.HandleFunc("POST /api/users/{id}/labs", jwtAuthMiddleware(opts.LabHandler.Create))
+	mux.HandleFunc("GET /api/users/{id}/labs", jwtAuthMiddleware(opts.LabHandler.List))
+	mux.HandleFunc("DELETE /api/labs/{id}", jwtAuthMiddleware(opts.LabHandler.Delete))
 
 	// Chat Sessions
 	mux.HandleFunc("POST /api/sessions", jwtAuthMiddleware(opts.ChatHandler.CreateSession))
