@@ -17,6 +17,7 @@ type RouterOptions struct {
 	AuthHandler   *AuthHandler
 	WeightHandler *WeightHandler
 	LabHandler    *LabHandler
+	RagHandler    *RagHandler
 }
 
 type contextKey string
@@ -115,6 +116,13 @@ func SetupRouter(opts RouterOptions) *http.ServeMux {
 	// Messages
 	mux.HandleFunc("POST /api/sessions/{id}/messages", jwtAuthMiddleware(opts.ChatHandler.AddMessage))
 	mux.HandleFunc("GET /api/sessions/{id}/messages", jwtAuthMiddleware(opts.ChatHandler.ListMessages))
+
+	// RAG Knowledge Base
+	mux.HandleFunc("POST /api/rag/generate-knowledge", opts.RagHandler.GenerateKnowledge)
+	mux.HandleFunc("POST /api/rag/ingest", opts.RagHandler.IngestKnowledge)
+	mux.HandleFunc("GET /api/rag/ingest/{processId}", opts.RagHandler.GetIngestStatus)
+	mux.HandleFunc("POST /api/rag/chat", jwtAuthMiddleware(opts.RagHandler.HandleChat))
+	mux.HandleFunc("POST /api/rag/chat/stream", jwtAuthMiddleware(opts.RagHandler.HandleChatStream))
 
 	// Apply global middlewares by wrapping the mux
 	wrapper := http.NewServeMux()

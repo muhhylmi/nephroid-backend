@@ -22,6 +22,8 @@ func main() {
 	defer pool.Close()
 
 	query := `
+	DROP TABLE IF EXISTS knowledge_chunks;
+
 	ALTER TABLE users ADD COLUMN IF NOT EXISTS target_dry_weight NUMERIC DEFAULT 60.0;
 	ALTER TABLE users ADD COLUMN IF NOT EXISTS lab_parameters JSONB;
 
