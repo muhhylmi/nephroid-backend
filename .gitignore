@@ -5,7 +5,7 @@
 *.so
 *.dylib
 bin/
-api
+api.exe
 
 # Test binary, built with `go test -c`
 *.test
