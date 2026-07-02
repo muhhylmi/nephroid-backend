@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"backend/internal/service"
 	"backend/pkg/response"
@@ -111,11 +112,24 @@ func (h *ChatHandler) ListMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	messages, err := h.chatService.GetSessionMessages(r.Context(), sessionID)
+	page := 1
+	limit := 20
+	if p := r.URL.Query().Get("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
+	messages, total, err := h.chatService.GetSessionMessages(r.Context(), sessionID, page, limit)
 	if err != nil {
 		response.Error(w, err)
 		return
 	}
 
-	response.JSON(w, http.StatusOK, messages, "success retrieve messages")
+	response.JSONPaginated(w, http.StatusOK, messages, page, limit, total, "success retrieve messages")
 }

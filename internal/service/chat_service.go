@@ -15,7 +15,7 @@ type ChatService interface {
 	ListUserSessions(ctx context.Context, userID uuid.UUID) ([]*domain.ChatSession, error)
 	DeleteSession(ctx context.Context, sessionID uuid.UUID) error
 	AddMessage(ctx context.Context, sessionID uuid.UUID, role string, content string) (*domain.Message, error)
-	GetSessionMessages(ctx context.Context, sessionID uuid.UUID) ([]*domain.Message, error)
+	GetSessionMessages(ctx context.Context, sessionID uuid.UUID, page, limit int) ([]*domain.Message, int, error)
 }
 
 type chatService struct {
@@ -85,15 +85,15 @@ func (s *chatService) AddMessage(ctx context.Context, sessionID uuid.UUID, role 
 	return msg, nil
 }
 
-func (s *chatService) GetSessionMessages(ctx context.Context, sessionID uuid.UUID) ([]*domain.Message, error) {
-	messages, err := s.messageRepo.GetBySessionID(ctx, sessionID)
+func (s *chatService) GetSessionMessages(ctx context.Context, sessionID uuid.UUID, page, limit int) ([]*domain.Message, int, error) {
+	messages, total, err := s.messageRepo.GetBySessionID(ctx, sessionID, page, limit)
 	if err != nil {
-		return nil, fmt.Errorf("chat service error listing messages: %w", err)
+		return nil, 0, fmt.Errorf("chat service error listing messages: %w", err)
 	}
 
 	if messages == nil {
 		messages = []*domain.Message{}
 	}
 
-	return messages, nil
+	return messages, total, nil
 }
