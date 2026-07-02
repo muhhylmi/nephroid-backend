@@ -52,8 +52,9 @@ func main() {
 
 	_, err = pool.Exec(context.Background(), query)
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		fmt.Printf("Migration failed: %v\n", err)
+		os.Exit(1)
+	} else {
+		fmt.Println("Migration successful!")
 	}
-	fmt.Println("Success")
 }
