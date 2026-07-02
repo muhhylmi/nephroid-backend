@@ -95,7 +95,7 @@ func (h *ChatHandler) AddMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := h.chatService.AddMessage(r.Context(), sessionID, req.Role, req.Content)
+	msg, err := h.chatService.AddMessage(r.Context(), sessionID, req.Role, req.Content, nil)
 	if err != nil {
 		response.Error(w, err)
 		return

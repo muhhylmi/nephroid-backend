@@ -14,7 +14,7 @@ type ChatService interface {
 	CreateSession(ctx context.Context, userID uuid.UUID, name string) (*domain.ChatSession, error)
 	ListUserSessions(ctx context.Context, userID uuid.UUID) ([]*domain.ChatSession, error)
 	DeleteSession(ctx context.Context, sessionID uuid.UUID) error
-	AddMessage(ctx context.Context, sessionID uuid.UUID, role string, content string) (*domain.Message, error)
+	AddMessage(ctx context.Context, sessionID uuid.UUID, role string, content string, citations interface{}) (*domain.Message, error)
 	GetSessionMessages(ctx context.Context, sessionID uuid.UUID, page, limit int) ([]*domain.Message, int, error)
 }
 
@@ -66,7 +66,7 @@ func (s *chatService) DeleteSession(ctx context.Context, sessionID uuid.UUID) er
 	return nil
 }
 
-func (s *chatService) AddMessage(ctx context.Context, sessionID uuid.UUID, role string, content string) (*domain.Message, error) {
+func (s *chatService) AddMessage(ctx context.Context, sessionID uuid.UUID, role string, content string, citations interface{}) (*domain.Message, error) {
 	role = strings.TrimSpace(strings.ToLower(role))
 	content = strings.TrimSpace(content)
 
@@ -77,7 +77,7 @@ func (s *chatService) AddMessage(ctx context.Context, sessionID uuid.UUID, role 
 		return nil, fmt.Errorf("%w: message content cannot be empty", domain.ErrInvalidInput)
 	}
 
-	msg, err := s.messageRepo.Create(ctx, sessionID, role, content)
+	msg, err := s.messageRepo.Create(ctx, sessionID, role, content, citations)
 	if err != nil {
 		return nil, fmt.Errorf("chat service error creating message: %w", err)
 	}

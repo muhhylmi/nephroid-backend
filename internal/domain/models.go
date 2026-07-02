@@ -58,11 +58,12 @@ type ChatSession struct {
 
 // Message represents a single message in a chat session
 type Message struct {
-	ID        uuid.UUID `json:"id"`
-	SessionID uuid.UUID `json:"session_id"`
-	Role      string    `json:"role"` // "user" or "assistant"
-	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uuid.UUID   `json:"id"`
+	SessionID uuid.UUID   `json:"session_id"`
+	Role      string      `json:"role"` // "user" or "assistant"
+	Content   string      `json:"content"`
+	Citations interface{} `json:"citations,omitempty"`
+	CreatedAt time.Time   `json:"created_at"`
 }
 
 // Auth Types

@@ -38,7 +38,7 @@ func (s *aiService) Chat(ctx context.Context, sessionID uuid.UUID, message strin
 	}
 
 	// 1. Save user message to database
-	_, err := s.chatService.AddMessage(ctx, sessionID, "user", message)
+	_, err := s.chatService.AddMessage(ctx, sessionID, "user", message, nil)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to save user message: %w", err)
 	}
@@ -108,7 +108,7 @@ Keep your responses helpful, supportive, and grounded in the provided facts.`
 	}
 
 	// 7. Save AI response to database
-	_, err = s.chatService.AddMessage(ctx, sessionID, "assistant", aiReply)
+	_, err = s.chatService.AddMessage(ctx, sessionID, "assistant", aiReply, chunks)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to save assistant message: %w", err)
 	}
@@ -123,7 +123,7 @@ func (s *aiService) ChatStream(ctx context.Context, sessionID uuid.UUID, message
 	}
 
 	// 1. Save user message to database
-	_, err := s.chatService.AddMessage(ctx, sessionID, "user", message)
+	_, err := s.chatService.AddMessage(ctx, sessionID, "user", message, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save user message: %w", err)
 	}
@@ -202,8 +202,8 @@ Keep your responses helpful, supportive, and grounded in the provided facts.`
 			chunkChan <- aiReply
 		}
 
-		// Save AI response to database
-		_, dbErr := s.chatService.AddMessage(context.Background(), sessionID, "assistant", aiReply)
+		// 7. Save AI response to database
+		_, dbErr := s.chatService.AddMessage(context.Background(), sessionID, "assistant", aiReply, chunks)
 		if dbErr != nil {
 			fmt.Printf("failed to save streaming assistant message: %v\n", dbErr)
 		}

@@ -21,6 +21,6 @@ type SessionRepository interface {
 }
 
 type MessageRepository interface {
-	Create(ctx context.Context, sessionID uuid.UUID, role string, content string) (*domain.Message, error)
+	Create(ctx context.Context, sessionID uuid.UUID, role string, content string, citations interface{}) (*domain.Message, error)
 	GetBySessionID(ctx context.Context, sessionID uuid.UUID, page, limit int) ([]*domain.Message, int, error)
 }
