@@ -24,13 +24,13 @@ func (h *ChatHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	userID, err := uuid.Parse(req.UserID)
 	if err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid user ID format")
 		return
 	}
 
@@ -40,14 +40,14 @@ func (h *ChatHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, session)
+	response.JSON(w, http.StatusCreated, session, "success create session")
 }
 
 func (h *ChatHandler) ListSessions(w http.ResponseWriter, r *http.Request) {
 	userIDParam := r.PathValue("userId")
 	userID, err := uuid.Parse(userIDParam)
 	if err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid user ID format")
 		return
 	}
 
@@ -57,14 +57,14 @@ func (h *ChatHandler) ListSessions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, sessions)
+	response.JSON(w, http.StatusOK, sessions, "success retrieve sessions")
 }
 
 func (h *ChatHandler) DeleteSession(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	sessionID, err := uuid.Parse(idParam)
 	if err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid session ID format")
 		return
 	}
 
@@ -74,14 +74,14 @@ func (h *ChatHandler) DeleteSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	response.JSON(w, http.StatusOK, nil, "success delete session")
 }
 
 func (h *ChatHandler) AddMessage(w http.ResponseWriter, r *http.Request) {
 	sessionIDParam := r.PathValue("id")
 	sessionID, err := uuid.Parse(sessionIDParam)
 	if err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid session ID format")
 		return
 	}
 
@@ -90,7 +90,7 @@ func (h *ChatHandler) AddMessage(w http.ResponseWriter, r *http.Request) {
 		Content string `json:"content"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
@@ -100,14 +100,14 @@ func (h *ChatHandler) AddMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, msg)
+	response.JSON(w, http.StatusCreated, msg, "success add message")
 }
 
 func (h *ChatHandler) ListMessages(w http.ResponseWriter, r *http.Request) {
 	sessionIDParam := r.PathValue("id")
 	sessionID, err := uuid.Parse(sessionIDParam)
 	if err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid session ID format")
 		return
 	}
 
@@ -117,5 +117,5 @@ func (h *ChatHandler) ListMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, messages)
+	response.JSON(w, http.StatusOK, messages, "success retrieve messages")
 }

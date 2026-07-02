@@ -32,9 +32,8 @@ func (h *RagHandler) GenerateKnowledge(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.JSON(w, http.StatusCreated, map[string]interface{}{
-		"message": "Knowledge base generated successfully",
 		"entries": count,
-	})
+	}, "Knowledge base generated successfully")
 }
 
 // IngestKnowledge handles POST /api/rag/ingest
@@ -47,7 +46,7 @@ func (h *RagHandler) IngestKnowledge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusAccepted, process)
+	response.JSON(w, http.StatusAccepted, process, "Ingestion process started")
 }
 
 // GetIngestStatus handles GET /api/rag/ingest/{processId}
@@ -55,7 +54,7 @@ func (h *RagHandler) IngestKnowledge(w http.ResponseWriter, r *http.Request) {
 func (h *RagHandler) GetIngestStatus(w http.ResponseWriter, r *http.Request) {
 	processID := r.PathValue("processId")
 	if processID == "" {
-		http.Error(w, "processId is required", http.StatusBadRequest)
+		response.JSONError(w, http.StatusBadRequest, "processId is required")
 		return
 	}
 
@@ -65,7 +64,7 @@ func (h *RagHandler) GetIngestStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, process)
+	response.JSON(w, http.StatusOK, process, "success retrieve ingest status")
 }
 
 // HandleChat handles POST /api/rag/chat
@@ -77,13 +76,13 @@ func (h *RagHandler) HandleChat(w http.ResponseWriter, r *http.Request) {
 
 	importJSON := json.NewDecoder(r.Body)
 	if err := importJSON.Decode(&req); err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	sessionUUID, err := uuid.Parse(req.SessionID)
 	if err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid session ID format")
 		return
 	}
 
@@ -98,7 +97,7 @@ func (h *RagHandler) HandleChat(w http.ResponseWriter, r *http.Request) {
 		"sources": chunks,
 	}
 
-	response.JSON(w, http.StatusOK, resp)
+	response.JSON(w, http.StatusOK, resp, "success chat response")
 }
 
 // HandleChatStream handles POST /api/rag/chat/stream using Server-Sent Events (SSE)
@@ -110,13 +109,13 @@ func (h *RagHandler) HandleChatStream(w http.ResponseWriter, r *http.Request) {
 
 	importJSON := json.NewDecoder(r.Body)
 	if err := importJSON.Decode(&req); err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	sessionUUID, err := uuid.Parse(req.SessionID)
 	if err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid session ID format")
 		return
 	}
 
@@ -128,7 +127,7 @@ func (h *RagHandler) HandleChatStream(w http.ResponseWriter, r *http.Request) {
 	// Ensure the writer supports flushing
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+		response.JSONError(w, http.StatusInternalServerError, "Streaming unsupported")
 		return
 	}
 

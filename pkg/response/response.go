@@ -9,20 +9,88 @@ import (
 	"backend/internal/domain"
 )
 
-type ErrorResponse struct {
-	Error string `json:"error"`
+type StandardResponse struct {
+	Success  bool        `json:"success"`
+	Data     interface{} `json:"data"`
+	Messages string      `json:"messages"`
 }
 
-func JSON(w http.ResponseWriter, status int, data interface{}) {
+type Meta struct {
+	Page      int `json:"page"`
+	PerPage   int `json:"perPage"`
+	TotalPage int `json:"totalPage"`
+	TotalData int `json:"totalData"`
+}
+
+type PaginatedResponse struct {
+	Success  bool        `json:"success"`
+	Data     interface{} `json:"data"`
+	Messages string      `json:"messages"`
+	Meta     Meta        `json:"meta"`
+}
+
+// JSON handles standard responses
+func JSON(w http.ResponseWriter, status int, data interface{}, messages string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	if data != nil {
-		if err := json.NewEncoder(w).Encode(data); err != nil {
-			slog.Error("failed to encode json response", "error", err)
-		}
+	
+	resp := StandardResponse{
+		Success:  status >= 200 && status < 300,
+		Data:     data,
+		Messages: messages,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		slog.Error("failed to encode json response", "error", err)
 	}
 }
 
+// JSONError handles standard error responses
+func JSONError(w http.ResponseWriter, status int, messages string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	resp := StandardResponse{
+		Success:  false,
+		Data:     nil,
+		Messages: messages,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		slog.Error("failed to encode json error response", "error", err)
+	}
+}
+
+// JSONPaginated handles paginated responses
+func JSONPaginated(w http.ResponseWriter, status int, data interface{}, page, limit, totalData int, messages string) {
+	totalPage := totalData / limit
+	if totalData%limit > 0 {
+		totalPage++
+	}
+	if totalPage == 0 {
+		totalPage = 1
+	}
+
+	resp := PaginatedResponse{
+		Success:  status >= 200 && status < 300,
+		Data:     data,
+		Messages: messages,
+		Meta: Meta{
+			Page:      page,
+			PerPage:   limit,
+			TotalPage: totalPage,
+			TotalData: totalData,
+		},
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		slog.Error("failed to encode json paginated response", "error", err)
+	}
+}
+
+// Error maps domain errors to HTTP errors using the standard format
 func Error(w http.ResponseWriter, err error) {
 	// Single handling rule: we log the technical error details here at the boundary.
 	slog.Error("request failed", "error", err)
@@ -44,5 +112,5 @@ func Error(w http.ResponseWriter, err error) {
 		msg = "unauthorized access"
 	}
 
-	JSON(w, status, ErrorResponse{Error: msg})
+	JSONError(w, status, msg)
 }

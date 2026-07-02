@@ -24,7 +24,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
@@ -34,14 +34,14 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, user)
+	response.JSON(w, http.StatusCreated, user, "success register user")
 }
 
 func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid user ID format")
 		return
 	}
 
@@ -51,20 +51,20 @@ func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, user)
+	response.JSON(w, http.StatusOK, user, "success retrieve user")
 }
 
 func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		response.Error(w, err)
+		response.JSONError(w, http.StatusBadRequest, "Invalid user ID format")
 		return
 	}
 
 	var req domain.UpdateProfileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		response.JSONError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
@@ -74,5 +74,5 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, user)
+	response.JSON(w, http.StatusOK, user, "success update user")
 }
