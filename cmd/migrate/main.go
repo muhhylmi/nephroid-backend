@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 
+	"backend/db"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -17,44 +19,40 @@ func main() {
 	}
 	pool, err := pgxpool.New(context.Background(), dbUrl)
 	if err != nil {
-		panic(err)
+		fmt.Printf("Failed to connect to database: %v\n", err)
+		os.Exit(1)
 	}
 	defer pool.Close()
 
-	query := `
-	DROP TABLE IF EXISTS knowledge_chunks;
-
-	ALTER TABLE users ADD COLUMN IF NOT EXISTS target_dry_weight NUMERIC DEFAULT 60.0;
-	ALTER TABLE users ADD COLUMN IF NOT EXISTS lab_parameters JSONB;
-
-	CREATE TABLE IF NOT EXISTS weight_records (
-		id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-		user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-		date VARCHAR(50) NOT NULL,
-		pre_weight NUMERIC NOT NULL,
-		post_weight NUMERIC NOT NULL,
-		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-	);
-
-	CREATE TABLE IF NOT EXISTS lab_records (
-		id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-		user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-		date VARCHAR(50) NOT NULL,
-		kreatinin NUMERIC NOT NULL,
-		ureum NUMERIC NOT NULL,
-		kalium NUMERIC NOT NULL,
-		hb NUMERIC NOT NULL,
-		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-	);
-
-	ALTER TABLE lab_records ADD COLUMN IF NOT EXISTS custom_values JSONB;
-	`
-
-	_, err = pool.Exec(context.Background(), query)
+	// Read files from the embedded FS
+	files, err := db.MigrationFiles.ReadDir(".")
 	if err != nil {
-		fmt.Printf("Migration failed: %v\n", err)
+		fmt.Printf("Failed to read migration files: %v\n", err)
 		os.Exit(1)
-	} else {
-		fmt.Println("Migration successful!")
 	}
+
+	var fileNames []string
+	for _, f := range files {
+		if !f.IsDir() {
+			fileNames = append(fileNames, f.Name())
+		}
+	}
+	sort.Strings(fileNames)
+
+	for _, fileName := range fileNames {
+		content, err := db.MigrationFiles.ReadFile(fileName)
+		if err != nil {
+			fmt.Printf("Failed to read file %s: %v\n", fileName, err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("Running migration: %s\n", fileName)
+		_, err = pool.Exec(context.Background(), string(content))
+		if err != nil {
+			fmt.Printf("Migration failed on %s: %v\n", fileName, err)
+			os.Exit(1)
+		}
+	}
+
+	fmt.Println("All migrations applied successfully!")
 }
